@@ -45,7 +45,7 @@ def delete_climate(climate_id):
     db = get_db()
     cursor = db.execute('delete from climate where id = ?', [climate_id])
     db.commit()
-    return jsonify({}), 200
+    return jsonify({'message':"Success"}), 200
 
 @app.route("/climate/predict", methods=['GET'])
 def predict_climate():
