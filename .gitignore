@@ -10,6 +10,8 @@ build
 *.egg
 *.egg-info
 _mailinglist
+.vscode/launch.json
+climate/climate.db
 .tox
 .cache/
 .idea/
@@ -19,3 +21,4 @@ htmlcov
 .coverage
 .coverage.*
 *,cover
+
