@@ -10,7 +10,7 @@ class FlaskrTestCase(unittest.TestCase):
         self.db_fd, climate.app.config['DATABASE'] = tempfile.mkstemp()
         climate.app.testing = True
         self.app = climate.app.test_client()
-        self.climate_test = dict(date='11/11/111', rainfall=20, temperature=40)
+        self.climate_test = dict(date='1111-11-11', rainfall=20, temperature=40)
         with climate.app.app_context():
             climate.init_db()
 

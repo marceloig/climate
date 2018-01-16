@@ -1,5 +1,6 @@
 import os
 import sqlite3
+from datetime import datetime
 from flask import Flask, request, g, jsonify
 
 app = Flask(__name__)
@@ -13,6 +14,7 @@ app.config.update(dict(
     PASSWORD='default'
 ))
 app.config.from_envvar('FLASKR_SETTINGS', silent=True)
+FORMAT_DATE = '%Y-%m-%d'
 
 @app.route("/climate", methods=['GET'])
 def list_climate():
@@ -22,22 +24,32 @@ def list_climate():
 
     return jsonify({'climates': climates})
 
-@app.route("/climate/<int:climate_id>", methods=['GET'])
+@app.route("/climate/<climate_id>", methods=['GET'])
 def get_climate(climate_id):
     row = query_db('select id, date, rainfall, temperature from climate where id = ?', [climate_id], one=True)
+    if row is None: 
+        return jsonify({'message':"Not found"}), 404
+
     return jsonify(create_climate(row))
 
 @app.route("/climate", methods=['POST'])
 def save_climate():
+    if not request.is_json:
+        return jsonify({'message':"Bad Gateway"}), 502
+
     db = get_db()
+    climate = request.get_json()
+    if not valid_climate(climate):
+        return jsonify({'message':"Bad Gateway"}), 502
+
     cursor = db.execute('insert into climate (date, rainfall, temperature) values (?, ?, ?)',
-                 [request.json['date'], request.json['rainfall'], request.json['temperature']])
+                 [climate['date'], climate['rainfall'], climate['temperature']])
     db.commit()
     
     return jsonify({'id': cursor.lastrowid, 
-                    'date': request.json['date'], 
-                    'rainfall': request.json['rainfall'], 
-                    'temperature': request.json['temperature'] 
+                    'date': climate['date'], 
+                    'rainfall': climate['rainfall'], 
+                    'temperature': climate['temperature']
                     }), 201
 
 @app.route("/climate/<int:climate_id>", methods=['DELETE'])
@@ -49,7 +61,15 @@ def delete_climate(climate_id):
 
 @app.route("/climate/predict", methods=['GET'])
 def predict_climate():
-    return 200
+    predict = datetime.now().strftime(FORMAT_DATE)
+    row = query_db('select id, date, rainfall, temperature from climate where date = ?', [predict], one=True)
+    if row is None: 
+        return jsonify({'message':"Not found"}), 404
+
+    return jsonify(create_climate(row))
+
+def query_params(params):
+    query_params = {'week':"and date('now','+1 month')"}
 
 def create_climate(row):
     climate = {'id': row['id'], 
@@ -58,6 +78,17 @@ def create_climate(row):
                 'temperature': row['temperature'] 
                 }
     return climate
+
+def valid_climate(climate):
+    if ('date' in climate and 'rainfall' in climate and 'temperature' in climate):
+        try:
+            datetime.strptime(climate['date'], FORMAT_DATE)
+        except ValueError:
+            return False
+
+        return True
+    else:
+        return False
 
 def init_db():
     db = get_db()
