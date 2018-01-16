@@ -19,7 +19,8 @@ FORMAT_DATE = '%Y-%m-%d'
 @app.route("/climate", methods=['GET'])
 def list_climate():
     climates = []
-    for row in query_db('select id, date, rainfall, temperature from climate order by id desc'):
+    query_sql = 'select id, date, rainfall, temperature from climate where 1=1 {} order by id desc'.format(query_filter(request.args))
+    for row in query_db(query_sql):
         climates.append(create_climate(row))
 
     return jsonify({'climates': climates})
@@ -52,7 +53,7 @@ def save_climate():
                     'temperature': climate['temperature']
                     }), 201
 
-@app.route("/climate/<int:climate_id>", methods=['DELETE'])
+@app.route("/climate/<climate_id>", methods=['DELETE'])
 def delete_climate(climate_id):
     db = get_db()
     cursor = db.execute('delete from climate where id = ?', [climate_id])
@@ -68,8 +69,15 @@ def predict_climate():
 
     return jsonify(create_climate(row))
 
-def query_params(params):
-    query_params = {'week':"and date('now','+1 month')"}
+def query_filter(params):
+    query = ""
+    query_period = {'period':"and (date between date('now') and date('now', '{}'))"}
+    query_value = {'week':"+7 day",
+                    'month':"+1 month"}
+    for key, value in params.iteritems():
+        if key in query_period: 
+            query = query.join(query_period[key].format(query_value.get(value, "+0 day")))
+    return query
 
 def create_climate(row):
     climate = {'id': row['id'], 
@@ -81,6 +89,8 @@ def create_climate(row):
 
 def valid_climate(climate):
     if ('date' in climate and 'rainfall' in climate and 'temperature' in climate):
+        if (not is_number(climate['rainfall'])) or (not is_number(climate['temperature'])):
+            return False
         try:
             datetime.strptime(climate['date'], FORMAT_DATE)
         except ValueError:
@@ -89,6 +99,9 @@ def valid_climate(climate):
         return True
     else:
         return False
+
+def is_number(num):
+    return isinstance(num, (int, long, float))
 
 def init_db():
     db = get_db()

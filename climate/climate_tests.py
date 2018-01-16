@@ -21,6 +21,8 @@ class FlaskrTestCase(unittest.TestCase):
     def test_url_invalid(self):
         rv = self.app.get('/')
         assert rv.status_code == 404
+        rv = self.app.get('/clima')
+        assert rv.status_code == 404
 
     def test_save_climate(self):
         rv = self.app.post('/climate', data=json.dumps(self.climate_test), content_type='application/json')
@@ -29,7 +31,11 @@ class FlaskrTestCase(unittest.TestCase):
     def test_save_invalid_climate(self):
         climate_invalid = dict(date='1111111', rainfall="20", temperature=True)
         rv = self.app.post('/climate', data=json.dumps(climate_invalid), content_type='application/json')
-        assert rv.status_code == 201
+        assert rv.status_code == 502
+
+        climate_invalid = dict(data='2000-02-02', precipitacao="20", temperatura=True)
+        rv = self.app.post('/climate', data=json.dumps(climate_invalid), content_type='application/json')
+        assert rv.status_code == 502
     
     def test_get_climate_by_id(self):
         rv = self.app.post('/climate', data=json.dumps(self.climate_test), content_type='application/json')
