@@ -4,7 +4,7 @@ from datetime import datetime
 from flask import Flask, request, g, jsonify
 
 app = Flask(__name__)
-app.config.from_object(__name__) # load config from this file , flaskr.py
+app.config.from_object(__name__) # load config from this file , climate.py
 
 # Load default config and override config from an environment variable
 app.config.update(dict(

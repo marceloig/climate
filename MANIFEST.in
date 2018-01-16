@@ -1,1 +1,1 @@
-include flaskr/schema.sql
+include climate/schema.sql
