@@ -5,4 +5,3 @@ create table climate (
   'rainfall' number not null,
   'temperature' number not null
 );
-insert into climate (date, rainfall, temperature) values ('1111-01-01', 111, 111);
