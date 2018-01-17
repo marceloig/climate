@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import werkzeug
 from datetime import datetime
 from flask import Flask, request, g, jsonify
 
@@ -66,14 +67,18 @@ def predict_climate():
 
     return jsonify(create_climate(row))
 
+@app.errorhandler(werkzeug.exceptions.BadRequest)
+def handle_bad_request(e):
+    return jsonify({'message':"Bad Request"}), 400
+
 def query_filter(params):
     query = ""
-    query_period = {'period':"and (date between date('now') and date('now', '{}'))"}
+    query_params = {'period':"and (date between date('now') and date('now', '{}'))"}
     query_value = {'week':"+7 day",
                     'month':"+1 month"}
     for key, value in params.iteritems():
-        if key in query_period: 
-            query = query.join(query_period[key].format(query_value.get(value, "+0 day")))
+        if key in query_params: 
+            query = query.join(query_params[key].format(query_value.get(value, "+0 day")))
     return query
 
 def create_climate(row):
