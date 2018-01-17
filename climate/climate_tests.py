@@ -10,7 +10,7 @@ class FlaskrTestCase(unittest.TestCase):
         self.db_fd, climate.app.config['DATABASE'] = tempfile.mkstemp()
         climate.app.testing = True
         self.app = climate.app.test_client()
-        self.climate_test = dict(date='1111-11-11', rainfall=20, temperature=40)
+        self.climate_test = dict(date='2018-01-01', rainfall=20, temperature=40)
         with climate.app.app_context():
             climate.init_db()
 
@@ -29,11 +29,11 @@ class FlaskrTestCase(unittest.TestCase):
         assert rv.status_code == 201
     
     def test_save_invalid_climate(self):
-        climate_invalid = dict(date='1111111', rainfall="20", temperature=True)
+        climate_invalid = dict(date='1111111', rainfall='20', temperature=True)
         rv = self.app.post('/climate', data=json.dumps(climate_invalid), content_type='application/json')
         assert rv.status_code == 502
 
-        climate_invalid = dict(data='2000-02-02', precipitacao="20", temperatura=True)
+        climate_invalid = dict(data='2000-02-02', precipitacao='20', temperatura=True)
         rv = self.app.post('/climate', data=json.dumps(climate_invalid), content_type='application/json')
         assert rv.status_code == 502
     
@@ -42,12 +42,20 @@ class FlaskrTestCase(unittest.TestCase):
         result_json = json.loads(rv.data)
         rv = self.app.get('/climate/{}'.format(result_json['id']))
         assert result_json['date'] == self.climate_test['date']
+        assert result_json['rainfall'] == self.climate_test['rainfall']
         assert result_json['temperature'] == self.climate_test['temperature']
 
     def test_get_climate_invalid(self):
         rv = self.app.get('/climate/{}'.format('q'))
         result_json = json.loads(rv.data)
         assert rv.status_code == 404
+
+    def test_query_climate(self):
+        rv = self.app.get('/climate?period=week')
+        assert rv.status_code == 200
+
+        rv = self.app.get('/climate?period=month')
+        assert rv.status_code == 200
     
     def test_delete_climate(self):
         rv = self.app.post('/climate', data=json.dumps(self.climate_test), content_type='application/json')
